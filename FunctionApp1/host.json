@@ -6,19 +6,12 @@
         "isEnabled": true,
         "excludedTypes": "Request"
       }
-    }
-  },
-  "Serilog": {
-    "MinimumLevel": "Information",
-    "WriteTo": [
-      {
-        "Name": "MSSqlServer",
-        "Args": {
-          "connectionString": "Server=GRPC006473\\SQLEXPRESS;database=PPC;User=sa;Password=W3lcome!123",
-          "tableName": "Logs",
-          "autoCreateSqlTable": true
-        }
+    },
+    "logLevel": {
+      "default": "Debug",
+      "override": {
+        "default": "Information"
       }
-    ]
+    }
   }
 }

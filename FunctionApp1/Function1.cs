@@ -32,9 +32,11 @@ namespace FunctionApp1
             var service = req.Url;
             string levelType = "HttpRequest";
 
-            logger.LogInformation("{GLOBAL_UUID}{USE_CASE}{ORDER_STATUS}{TIMESTAMP}", guid, useCase, orderStatus, DateTime.Now);
-            logger.LogWarning("{GLOBAL_UUID}{USE_CASE}{REQUEST_UUID}{SERVICE}{END_SYSTEM}{STATE}{PAYLOAD}{TIMESTAMP}{LEVEL_TYPE}", 
+           // logger.LogInformation("{GLOBAL_UUID}{USE_CASE}{ORDER_STATUS}{TIMESTAMP}", guid, useCase, orderStatus, DateTime.Now);
+            /*logger.LogWarning("{GLOBAL_UUID}{USE_CASE}{REQUEST_UUID}{SERVICE}{END_SYSTEM}{STATE}{PAYLOAD}{TIMESTAMP}{LEVEL_TYPE}", 
                                 guid, useCase, Guid.NewGuid(), service, context.GetType, orderStatus, req.Body, DateTime.Now, levelType);
+            */
+            logger.LogInformation("Giwrgos");
 
             return response;
         }

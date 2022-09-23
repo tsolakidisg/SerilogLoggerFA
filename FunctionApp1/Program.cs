@@ -1,3 +1,4 @@
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,6 +7,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.MSSqlServer;
 using Serilog.Templates;
+using System;
 using System.Diagnostics;
 
 var host = new HostBuilder()
@@ -13,6 +15,7 @@ var host = new HostBuilder()
     .ConfigureServices(s =>
     {
         var dbConnection = Environment.GetEnvironmentVariable("LogConnection", EnvironmentVariableTarget.Process);
+        var appInsightsInstrumentationKey = Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATIONKEY", EnvironmentVariableTarget.Process);
 
         // HEAD_MONITOR_TABLE Options and Configuration
         var sinkOptsHead = new MSSqlServerSinkOptions
@@ -99,52 +102,54 @@ var host = new HostBuilder()
         .MinimumLevel.Override("Microsoft.Azure.WebJobs", LogEventLevel.Error)
         .MinimumLevel.Override("Microsoft.Azure.Functions.Worker", LogEventLevel.Error)
         .MinimumLevel.Override("Microsoft.Azure.Functions.Worker.Http", LogEventLevel.Error)
-        .WriteTo.Logger(l =>
-        {
-            l.WriteTo.Conditional(ev =>
-            {
-                bool isDebug = ev.Level == LogEventLevel.Debug;
-                if (isDebug) { return true; }
-                return false;
-            }, wt => wt.Console());
-        })
-        .WriteTo.Logger(l =>
-        {
-            l.WriteTo.Conditional(ev =>
-            {
-                bool isDebug = ev.Level == LogEventLevel.Debug;
-                if (isDebug) { return true; }
-                return false;
-            }, wt => wt.File(
-                    "log.txt",
-                    rollingInterval: RollingInterval.Day));
-        })
-        .WriteTo.Logger(l => 
-        {
-            l.WriteTo.Conditional(ev =>
-            {
-                bool isInformation = ev.Level == LogEventLevel.Information;
-                if (isInformation) { return true; }
-                return false;
-            },
-            wt => wt.MSSqlServer(
-                    connectionString: dbConnection,
-                    sinkOptions: sinkOptsHead,
-                    columnOptions: columnOptsHead));
-        })
-        .WriteTo.Logger(l =>
-        {
-            l.WriteTo.Conditional(ev =>
-            {
-                bool isInformation = ev.Level == LogEventLevel.Information;
-                if (isInformation) { return true; }
-                return false;
-            },
-            wt => wt.MSSqlServer(
-                    connectionString: dbConnection,
-                    sinkOptions: sinkOptsDetails,
-                    columnOptions: columnOptsDetails));
-        })
+        //.WriteTo.ApplicationInsights(new TelemetryConfiguration { InstrumentationKey= appInsightsInstrumentationKey }  ,TelemetryConverter.Traces)
+        .WriteTo.ApplicationInsights(TelemetryConfiguration.Active, TelemetryConverter.Traces)
+        //.WriteTo.Logger(l =>
+        //{
+        //    l.WriteTo.Conditional(ev =>
+        //    {
+        //        bool isDebug = ev.Level == LogEventLevel.Debug;
+        //        if (isDebug) { return true; }
+        //        return false;
+        //    }, wt => wt.Console());
+        //})
+        //.WriteTo.Logger(l =>
+        //{
+        //    l.WriteTo.Conditional(ev =>
+        //    {
+        //        bool isDebug = ev.Level == LogEventLevel.Debug;
+        //        if (isDebug) { return true; }
+        //        return false;
+        //    }, wt => wt.File(
+        //            "log.txt",
+        //            rollingInterval: RollingInterval.Day));
+        //})
+        //.WriteTo.Logger(l => 
+        //{
+        //    l.WriteTo.Conditional(ev =>
+        //    {
+        //        bool isInformation = ev.Level == LogEventLevel.Information;
+        //        if (isInformation) { return true; }
+        //        return false;
+        //    },
+        //    wt => wt.MSSqlServer(
+        //            connectionString: dbConnection,
+        //            sinkOptions: sinkOptsHead,
+        //            columnOptions: columnOptsHead));
+        //})
+        //.WriteTo.Logger(l =>
+        //{
+        //    l.WriteTo.Conditional(ev =>
+        //    {
+        //        bool isInformation = ev.Level == LogEventLevel.Information;
+        //        if (isInformation) { return true; }
+        //        return false;
+        //    },
+        //    wt => wt.MSSqlServer(
+        //            connectionString: dbConnection,
+        //            sinkOptions: sinkOptsDetails,
+        //            columnOptions: columnOptsDetails));
+        //})
         .CreateLogger();
         s.AddLogging(lb =>
         {

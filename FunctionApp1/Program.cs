@@ -7,6 +7,7 @@ using Serilog.Events;
 using Serilog.Sinks.MSSqlServer;
 using Serilog.Templates;
 using System.Diagnostics;
+using System.Linq;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
@@ -124,7 +125,12 @@ var host = new HostBuilder()
             l.WriteTo.Conditional(ev =>
             {
                 bool isInformation = ev.Level == LogEventLevel.Information;
-                if (isInformation) { return true; }
+                if (isInformation) {
+                    if (ev.MessageTemplate.Tokens.ToList().Count <= 4)
+                    {
+                        return true;
+                    }
+                }
                 return false;
             },
             wt => wt.MSSqlServer(
@@ -137,7 +143,12 @@ var host = new HostBuilder()
             l.WriteTo.Conditional(ev =>
             {
                 bool isInformation = ev.Level == LogEventLevel.Information;
-                if (isInformation) { return true; }
+                if (isInformation) { 
+                    if (ev.MessageTemplate.Tokens.ToList().Count > 4)
+                    {
+                        return true;
+                    }
+                }
                 return false;
             },
             wt => wt.MSSqlServer(

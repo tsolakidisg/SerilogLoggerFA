@@ -16,6 +16,9 @@ var host = new HostBuilder()
     {
         var dbConnection = Environment.GetEnvironmentVariable("LogConnection", EnvironmentVariableTarget.Process);
         var appInsightsInstrumentationKey = Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATIONKEY", EnvironmentVariableTarget.Process);
+        var homePath = Environment.GetEnvironmentVariable("HOME", EnvironmentVariableTarget.Process);
+        //var myPath = "C:\\Users\\gpavlis\\source\\repos\\SerilogLoggerFA\\FunctionApp1\\bin\\Debug\\net6.0\\logs\\log.txt";
+        var path = homePath+ "\\LogFiles\\Application\\Functions\\Host\\log.txt";
 
         // HEAD_MONITOR_TABLE Options and Configuration
         var sinkOptsHead = new MSSqlServerSinkOptions
@@ -104,6 +107,7 @@ var host = new HostBuilder()
         .MinimumLevel.Override("Microsoft.Azure.Functions.Worker.Http", LogEventLevel.Error)
         //.WriteTo.ApplicationInsights(new TelemetryConfiguration { InstrumentationKey= appInsightsInstrumentationKey }  ,TelemetryConverter.Traces)
         .WriteTo.ApplicationInsights(TelemetryConfiguration.Active, TelemetryConverter.Traces)
+        .WriteTo.File(path, rollingInterval: RollingInterval.Day)
         //.WriteTo.Logger(l =>
         //{
         //    l.WriteTo.Conditional(ev =>

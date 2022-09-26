@@ -1,3 +1,4 @@
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,6 +7,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.MSSqlServer;
 using Serilog.Templates;
+using System;
 using System.Diagnostics;
 using System.Linq;
 
@@ -14,6 +16,9 @@ var host = new HostBuilder()
     .ConfigureServices(s =>
     {
         var dbConnection = Environment.GetEnvironmentVariable("LogConnection", EnvironmentVariableTarget.Process);
+        var appInsightsInstrumentationKey = Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATIONKEY", EnvironmentVariableTarget.Process);
+        var homePath = Environment.GetEnvironmentVariable("HOME", EnvironmentVariableTarget.Process);
+        var path = homePath + "\\LogFiles\\Application\\Functions\\Host\\log.txt";
 
         // HEAD_MONITOR_TABLE Options and Configuration
         var sinkOptsHead = new MSSqlServerSinkOptions
@@ -53,12 +58,6 @@ var host = new HostBuilder()
         };
 
         var columnOptsDetails = new ColumnOptions();
-
-        // Override the default Primary Column of Serilog by custom column
-        //columnOptsDetails.Id.ColumnName = "REQUEST_UUID";
-        //columnOptsDetails.PrimaryKey.ColumnName = "REQUEST_UUID";
-        //columnOptsDetails.PrimaryKey.ColumnName = "STATE";
-        //columnOptsDetails.PrimaryKey.PropertyName = "PrimaryKey";
 
         // Removing all the unencessary columns
         columnOptsDetails.Store.Remove(StandardColumn.Id);
@@ -100,6 +99,7 @@ var host = new HostBuilder()
         .MinimumLevel.Override("Microsoft.Azure.WebJobs", LogEventLevel.Error)
         .MinimumLevel.Override("Microsoft.Azure.Functions.Worker", LogEventLevel.Error)
         .MinimumLevel.Override("Microsoft.Azure.Functions.Worker.Http", LogEventLevel.Error)
+        .WriteTo.ApplicationInsights(TelemetryConfiguration.Active, TelemetryConverter.Traces)
         .WriteTo.Logger(l =>
         {
             l.WriteTo.Conditional(ev =>
@@ -117,10 +117,10 @@ var host = new HostBuilder()
                 if (isDebug) { return true; }
                 return false;
             }, wt => wt.File(
-                    "log.txt",
+                    path,
                     rollingInterval: RollingInterval.Day));
         })
-        .WriteTo.Logger(l => 
+        .WriteTo.Logger(l =>
         {
             l.WriteTo.Conditional(ev =>
             {
@@ -142,6 +142,8 @@ var host = new HostBuilder()
         {
             l.WriteTo.Conditional(ev =>
             {
+                bool isWarning = ev.Level == LogEventLevel.Warning;
+                if (isWarning) { return true; }
                 bool isInformation = ev.Level == LogEventLevel.Information;
                 if (isInformation) { 
                     if (ev.MessageTemplate.Tokens.ToList().Count > 4)
